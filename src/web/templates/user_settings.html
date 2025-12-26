@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user.name }} - Settings{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Settings</h1>
+            <p class="mt-1 text-sm text-gray-500">Configure search criteria for {{ user.name }}</p>
+        </div>
+        <a href="/u/{{ access_token }}"
+           class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Back to Matches
+        </a>
+    </div>
+
+    <!-- Success Message -->
+    {% if saved %}
+    <div class="rounded-md bg-green-50 p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <div class="ml-3">
+                <p class="text-sm font-medium text-green-800">Settings saved successfully!</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Settings Form -->
+    <form action="/u/{{ access_token }}/settings" method="POST" class="bg-white rounded-lg shadow">
+        <div class="p-6 space-y-6">
+            <!-- Keywords -->
+            <div>
+                <label for="keywords" class="block text-sm font-medium text-gray-700">
+                    Keywords
+                </label>
+                <p class="mt-1 text-xs text-gray-500">Comma-separated list of job keywords to match</p>
+                <input type="text" name="keywords" id="keywords"
+                       value="{{ keywords|join(', ') }}"
+                       placeholder="e.g., デザイナー, UXデザイナー, UIデザイナー"
+                       class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
+
+            <!-- Locations -->
+            <div>
+                <label for="locations" class="block text-sm font-medium text-gray-700">
+                    Locations
+                </label>
+                <p class="mt-1 text-xs text-gray-500">Comma-separated list of preferred locations</p>
+                <input type="text" name="locations" id="locations"
+                       value="{{ locations|join(', ') }}"
+                       placeholder="e.g., 東京, リモート, 大阪"
+                       class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+            </div>
+
+            <!-- Salary Range -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="min_salary" class="block text-sm font-medium text-gray-700">
+                        Min Annual Salary (万円)
+                    </label>
+                    <div class="mt-2 relative rounded-md shadow-sm">
+                        <input type="number" name="min_salary" id="min_salary"
+                               value="{{ (criteria.min_salary / 10000)|int if criteria and criteria.min_salary else '' }}"
+                               placeholder="e.g., 400"
+                               class="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <span class="text-gray-500 sm:text-sm">万円</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label for="max_salary" class="block text-sm font-medium text-gray-700">
+                        Max Annual Salary (万円)
+                    </label>
+                    <div class="mt-2 relative rounded-md shadow-sm">
+                        <input type="number" name="max_salary" id="max_salary"
+                               value="{{ (criteria.max_salary / 10000)|int if criteria and criteria.max_salary else '' }}"
+                               placeholder="e.g., 800"
+                               class="block w-full rounded-md border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                            <span class="text-gray-500 sm:text-sm">万円</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Remote Preference -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Remote Work Preference</label>
+                <div class="mt-2 space-x-4">
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="remote_preference" value=""
+                               {% if not criteria or criteria.remote_preference is none %}checked{% endif %}
+                               class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                        <span class="ml-2 text-sm text-gray-700">No preference</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="remote_preference" value="true"
+                               {% if criteria and criteria.remote_preference == true %}checked{% endif %}
+                               class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                        <span class="ml-2 text-sm text-gray-700">Prefer remote</span>
+                    </label>
+                    <label class="inline-flex items-center">
+                        <input type="radio" name="remote_preference" value="false"
+                               {% if criteria and criteria.remote_preference == false %}checked{% endif %}
+                               class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                        <span class="ml-2 text-sm text-gray-700">Prefer on-site</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 rounded-b-lg flex justify-end space-x-3">
+            <a href="/u/{{ access_token }}"
+               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                Cancel
+            </a>
+            <button type="submit"
+                    class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+                Save Settings
+            </button>
+        </div>
+    </form>
+
+    <!-- Tips -->
+    <div class="bg-white rounded-lg shadow border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <h3 class="text-lg font-medium text-gray-900">Tips</h3>
+        </div>
+        <div class="p-6">
+            <ul class="text-sm text-gray-600 space-y-2">
+                <li>• Keywords are matched against job titles and descriptions</li>
+                <li>• Location matches are partial (e.g., "東京" matches "東京都港区")</li>
+                <li>• Salary values are in 万円 (10,000 yen units)</li>
+                <li>• After saving, click "Run Matching" to update your matches</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

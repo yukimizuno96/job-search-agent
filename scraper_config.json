@@ -1,0 +1,26 @@
+{
+  "global": {
+    "keywords": ["デザイナー"],
+    "location": "東京",
+    "max_pages": 20,
+    "parallel": false,
+    "max_workers": 1,
+    "delay_range": [3.0, 5.0]
+  },
+  "scrapers": {
+    "doda": {
+      "enabled": false,
+      "_comment": "Disabled - Doda blocks programmatic access"
+    },
+    "green": {
+      "enabled": true
+    },
+    "indeed": {
+      "enabled": false,
+      "_comment": "Disabled - Indeed returns 403 Forbidden"
+    },
+    "wantedly": {
+      "enabled": true
+    }
+  }
+}

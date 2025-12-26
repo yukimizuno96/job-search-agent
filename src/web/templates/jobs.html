@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Jobs{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Browse Jobs</h1>
+            <p class="mt-1 text-sm text-gray-500">{{ pagination.total }} jobs found</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow p-4">
+        <form method="GET" class="flex flex-wrap items-end gap-4">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                <input type="text" name="search"
+                       value="{{ filters.search or '' }}"
+                       placeholder="Search title or company..."
+                       class="block w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Job Board</label>
+                <select name="job_board"
+                        class="rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">All Boards</option>
+                    {% for board in job_boards %}
+                    <option value="{{ board }}" {% if filters.job_board == board %}selected{% endif %}>
+                        {{ board }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input type="text" name="location"
+                       value="{{ filters.location or '' }}"
+                       placeholder="e.g., 東京"
+                       class="w-32 rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select name="is_active"
+                        class="rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">All</option>
+                    <option value="true" {% if filters.is_active == 'true' %}selected{% endif %}>Active</option>
+                    <option value="false" {% if filters.is_active == 'false' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+
+            <div class="flex space-x-2">
+                <button type="submit"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    Search
+                </button>
+                {% if filters.search or filters.job_board or filters.location or filters.is_active %}
+                <a href="/jobs" class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Clear
+                </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Jobs Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        {% if jobs %}
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Salary</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3"></th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for job in jobs %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <a href="{{ job.url }}" target="_blank"
+                           class="text-sm font-medium text-indigo-600 hover:text-indigo-800 line-clamp-2">
+                            {{ job.title[:60] }}{% if job.title|length > 60 %}...{% endif %}
+                        </a>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm text-gray-900">{{ job.company[:30] }}{% if job.company|length > 30 %}...{% endif %}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm text-gray-500">{{ job.location[:20] if job.location else '-' }}{% if job.location and job.location|length > 20 %}...{% endif %}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if job.salary_annual_min or job.salary_annual_max %}
+                        <span class="text-sm text-gray-900">
+                            {% if job.salary_annual_min %}{{ (job.salary_annual_min / 10000)|int }}{% endif %}
+                            {% if job.salary_annual_min and job.salary_annual_max %}~{% endif %}
+                            {% if job.salary_annual_max %}{{ (job.salary_annual_max / 10000)|int }}{% endif %}万
+                        </span>
+                        {% else %}
+                        <span class="text-sm text-gray-400">-</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {% if job.job_board == 'doda' %}bg-blue-100 text-blue-800
+                            {% elif job.job_board == 'green' %}bg-green-100 text-green-800
+                            {% elif job.job_board == 'indeed' %}bg-purple-100 text-purple-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ job.job_board }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if job.is_active %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                            Active
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">
+                            Inactive
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        <a href="{{ job.url }}" target="_blank"
+                           class="text-indigo-600 hover:text-indigo-900">
+                            View
+                            <svg class="inline w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        {% if pagination.total_pages > 1 %}
+        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div class="flex-1 flex justify-between sm:hidden">
+                {% if pagination.page > 1 %}
+                <a href="?page={{ pagination.page - 1 }}{% if filters.job_board %}&job_board={{ filters.job_board }}{% endif %}{% if filters.location %}&location={{ filters.location }}{% endif %}{% if filters.is_active %}&is_active={{ filters.is_active }}{% endif %}{% if filters.search %}&search={{ filters.search }}{% endif %}"
+                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Previous
+                </a>
+                {% endif %}
+                {% if pagination.page < pagination.total_pages %}
+                <a href="?page={{ pagination.page + 1 }}{% if filters.job_board %}&job_board={{ filters.job_board }}{% endif %}{% if filters.location %}&location={{ filters.location }}{% endif %}{% if filters.is_active %}&is_active={{ filters.is_active }}{% endif %}{% if filters.search %}&search={{ filters.search }}{% endif %}"
+                   class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Next
+                </a>
+                {% endif %}
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Showing
+                        <span class="font-medium">{{ (pagination.page - 1) * pagination.per_page + 1 }}</span>
+                        to
+                        <span class="font-medium">{{ [pagination.page * pagination.per_page, pagination.total]|min }}</span>
+                        of
+                        <span class="font-medium">{{ pagination.total }}</span>
+                        results
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        {% if pagination.page > 1 %}
+                        <a href="?page={{ pagination.page - 1 }}{% if filters.job_board %}&job_board={{ filters.job_board }}{% endif %}{% if filters.location %}&location={{ filters.location }}{% endif %}{% if filters.is_active %}&is_active={{ filters.is_active }}{% endif %}{% if filters.search %}&search={{ filters.search }}{% endif %}"
+                           class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Previous</span>
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </a>
+                        {% endif %}
+
+                        {% for p in range(1, pagination.total_pages + 1) %}
+                            {% if p == pagination.page %}
+                            <span class="relative inline-flex items-center px-4 py-2 border border-indigo-500 bg-indigo-50 text-sm font-medium text-indigo-600">
+                                {{ p }}
+                            </span>
+                            {% elif p == 1 or p == pagination.total_pages or (p >= pagination.page - 2 and p <= pagination.page + 2) %}
+                            <a href="?page={{ p }}{% if filters.job_board %}&job_board={{ filters.job_board }}{% endif %}{% if filters.location %}&location={{ filters.location }}{% endif %}{% if filters.is_active %}&is_active={{ filters.is_active }}{% endif %}{% if filters.search %}&search={{ filters.search }}{% endif %}"
+                               class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                {{ p }}
+                            </a>
+                            {% elif p == pagination.page - 3 or p == pagination.page + 3 %}
+                            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                                ...
+                            </span>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if pagination.page < pagination.total_pages %}
+                        <a href="?page={{ pagination.page + 1 }}{% if filters.job_board %}&job_board={{ filters.job_board }}{% endif %}{% if filters.location %}&location={{ filters.location }}{% endif %}{% if filters.is_active %}&is_active={{ filters.is_active }}{% endif %}{% if filters.search %}&search={{ filters.search }}{% endif %}"
+                           class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <span class="sr-only">Next</span>
+                            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </a>
+                        {% endif %}
+                    </nav>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="px-6 py-12 text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No jobs found</h3>
+            <p class="mt-1 text-sm text-gray-500">Try adjusting your filters or run a scrape to add jobs.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
